@@ -1,0 +1,54 @@
+# =============================================================================
+# .dockerignore — Docker 构建上下文排除规则
+#
+# 作用：在 docker build 发送构建上下文（build context）到 Docker daemon 时，
+#       排除不需要的文件和目录，减小上下文体积、加快构建速度、避免敏感信息泄露。
+# 注意：这里的规则只影响 COPY/ADD 指令能否访问到文件，
+#       不影响 Dockerfile 本身的解析（Dockerfile 不会被忽略）。
+# =============================================================================
+
+# Git — 版本控制文件，容器内不需要 git 历史
+.git/
+.gitignore
+.gitattributes
+
+# Logs — 运行时日志，不应打包进镜像
+logs/
+*.log
+
+# IDE — 编辑器配置与临时文件
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS — 操作系统生成的文件
+.DS_Store          # macOS 目录元数据
+Thumbs.db          # Windows 缩略图缓存
+
+# Build — 本地编译产物（Go 编译在 Dockerfile 多阶段构建中完成，无需打包本地二进制）
+bin/
+*.exe
+*.test
+*.out
+__debug_bin        # Go delve 调试二进制
+
+# Docker — 避免递归复制 Docker 相关文件，减小上下文
+Dockerfile
+.dockerignore
+docker-compose*.yml
+
+# Docs — 文档文件不影响运行时，排除可减小镜像体积
+*.md
+README*
+
+# CI — 持续集成配置
+.github/
+.gitlab-ci.yml
+
+# Env — 环境变量文件（可能包含敏感信息，通过 docker-compose environment 注入）
+.env
+.env.*
+
+# Uploads — 运行时上传的文件目录（容器运行后由应用自行创建）
+uploads/

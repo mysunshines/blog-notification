@@ -1,0 +1,65 @@
+# ============================================================
+# notification-service 配置（Docker test 环境）
+# ============================================================
+# 由 docker-compose 注入 APP_ENV=test 时加载（CONFIG_PATH=config/config_test.yaml）。
+# 与本地 config.yaml 的差异：地址全部指向 docker 网络内的基础设施容器
+# （mysql/redis/consul 均为 shared-infra 网络中的 service 名）。
+# ============================================================
+
+app:
+  name: "notification-service"
+  env: "test"
+  log_level: "debug"
+
+# gRPC 91xx 段（与其它服务统一：user 9101 / article 9102 / comment 9103 / notification 9105）
+grpc:
+  host: "0.0.0.0"
+  port: 9105
+
+# HTTP：承载 WS（/ws/notification）+ 探活，容器内 8085，
+# docker-compose 已映射宿主机 8085（Gateway 的 WS 反向代理目标）。
+http:
+  host: "0.0.0.0"
+  port: 8085
+
+database:
+  host: "mysql"          # infra 容器名（shared-infra 网络）
+  port: 3306
+  user: "root"
+  password: "root123"    # 与 docker-compose.infra.yml 中 MySQL 初始化口令一致
+  name: "notification_db"
+  max_open_conns: 25     # 容器部署收紧连接数（多副本共享 MySQL max_connections）
+
+redis:
+  host: "redis"
+  port: 6379
+  password: ""
+  db: 0
+
+consul:
+  address: "consul:8500"
+  check_interval: 10
+  deregister_critical: 30
+
+metrics:
+  enabled: true
+  path: "/metrics"
+  port: 9099
+
+# 与 user-service test 环境签发密钥一致（gateway 同）
+jwt:
+  secret: "test-secret-key-do-not-use-in-production"
+  expire_time: 168
+
+rate_limit:
+  enabled: false
+  qps: 1000
+  burst: 2000
+
+server:
+  grpc_timeout: 10
+  http_read_timeout: 15
+  http_write_timeout: 15
+  http_idle_timeout: 60
+  http_read_header_timeout: 10
+  http_default_timeout: 30

@@ -1,0 +1,116 @@
+syntax = "proto3";
+
+package notification.v1;
+
+option go_package = "github.com/mysunshines/blog-notification/proto/pb";
+
+
+// NotificationType 站内消息类型
+enum NotificationType {
+  NOTIFICATION_TYPE_UNSPECIFIED = 0;
+  // 文章审核通过
+  ARTICLE_APPROVED = 1;
+  // 文章审核驳回
+  ARTICLE_REJECTED = 2;
+  // 文章被下线
+  ARTICLE_OFFLINED = 3;
+  // 文章被点赞
+  ARTICLE_LIKED = 4;
+  // 文章被评论
+  ARTICLE_COMMENTED = 5;
+  // 评论被点赞
+  COMMENT_LIKED = 6;
+  // 评论被回复
+  COMMENT_REPLIED = 7;
+}
+
+// NotificationMessage 单条站内消息
+message NotificationMessage {
+  uint64 id = 1;
+  uint64 user_id = 2;            // 消息接收者
+  NotificationType type = 3;     // 消息类型
+  string title = 4;             // 标题（如「你的文章《xxx》已通过审核」）
+  string content = 5;           // 正文（如评论内容；审核类可为空）
+  string link = 6;              // 跳转链接（相对路径，如 /article/123）
+  bool is_read = 7;             // 是否已读
+  int64 created_at = 8;         // 创建时间戳（秒）
+}
+
+// CreateMessageRequest 写入一条消息（业务服务调用）
+message CreateMessageRequest {
+  uint64 user_id = 1;           // 消息接收者（必填）
+  NotificationType type = 2;    // 消息类型（必填）
+  string title = 3;
+  string content = 4;
+  string link = 5;
+  // actor_id / actor_name：触发者（如点赞人、评论人），仅用于展示
+  uint64 actor_id = 6;
+  string actor_name = 7;
+}
+
+message CreateMessageResponse {
+  int32 code = 1;
+  string message = 2;
+  NotificationMessage data = 3;
+}
+
+// GetMessagesRequest 拉取当前用户的消息列表
+message GetMessagesRequest {
+  uint64 user_id = 1;
+  // type 过滤（0 表示全部）
+  NotificationType type = 2;
+  int32 page = 3;
+  int32 page_size = 4;
+  // only_unread 仅返回未读
+  bool only_unread = 5;
+}
+
+message GetMessagesResponse {
+  int32 code = 1;
+  string message = 2;
+  repeated NotificationMessage list = 3;
+  int64 total = 4;
+  int64 unread_count = 5;
+}
+
+message GetUnreadCountRequest {
+  uint64 user_id = 1;
+}
+
+message GetUnreadCountResponse {
+  int32 code = 1;
+  string message = 2;
+  int64 unread_count = 3;
+}
+
+message MarkReadRequest {
+  uint64 user_id = 1;
+  // message_id > 0 时标记单条；= 0 且 mark_all=true 时标记全部
+  uint64 message_id = 2;
+  bool mark_all = 3;
+}
+
+message MarkReadResponse {
+  int32 code = 1;
+  string message = 2;
+  int64 unread_count = 3;
+}
+
+// NotificationService 站内消息服务
+service NotificationService {
+  // 写入消息（article/comment 等业务服务调用）
+  rpc CreateMessage(CreateMessageRequest) returns (CreateMessageResponse) {
+  }
+
+  // 拉取消息列表
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse) {
+  }
+
+  // 未读计数
+  rpc GetUnreadCount(GetUnreadCountRequest) returns (GetUnreadCountResponse) {
+  }
+
+  // 标记已读
+  rpc MarkRead(MarkReadRequest) returns (MarkReadResponse) {
+  }
+}
