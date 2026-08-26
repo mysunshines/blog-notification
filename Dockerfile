@@ -13,15 +13,8 @@ ENV GOPROXY=https://goproxy.cn,https://goproxy.io,direct
 ENV GOSUMDB=off
 
 COPY go.mod go.sum ./
-# ---- replace 目标：gocommon（go.mod 里 replace ../gocommon）----
-# 先只拷 go.mod/go.sum 供 go mod download 解析依赖（层缓存友好），
-# 完整源码在 go mod download 之后拷入。
-COPY --from=gocommon go.mod go.sum /gocommon/
-RUN --mount=type=cache,target=/go/pkg/mod \
-    go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
-# 拉入 gocommon 完整源码（replace 目录），业务源码随后拷入
-COPY --from=gocommon . /gocommon/
 COPY . .
 
 ARG GIT_VERSION=dev

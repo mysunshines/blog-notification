@@ -31,8 +31,12 @@ coverage.txt
 # ============================
 # Go
 # ============================
-# go.sum 作为依赖锁定文件提交（拆分仓库后标准做法；
-# Dockerfile 构建 COPY go.mod go.sum ./ 依赖它存在）
+# go.sum 是否提交取决于团队习惯：
+# - 多模块 monorepo 使用 go.work 时，部分团队忽略 per-module go.sum
+# - 拆分仓库后，建议提交 go.sum 作为依赖锁定文件
+# 当前：忽略 go.sum；如需更改，注释下面这行：
+go.sum
+go.mod/go.sum
 vendor/
 
 # ============================
