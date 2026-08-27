@@ -88,4 +88,4 @@ tmp/
 temp/
 *.tmp
 *.bak
-server
+/server

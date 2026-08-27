@@ -3,10 +3,10 @@ package service
 import (
 	"context"
 
-	notification "github.com/mysunshines/blog-notification/proto/pb"
 	"github.com/mysunshines/blog-notification/internal/model"
 	"github.com/mysunshines/blog-notification/internal/repository"
 	"github.com/mysunshines/blog-notification/internal/ws"
+	notification "github.com/mysunshines/blog-notification/proto/pb"
 
 	"github.com/mysunshines/gocommon/middleware"
 	"go.uber.org/zap"
@@ -95,11 +95,11 @@ func (s *NotificationService) GetMessages(ctx context.Context, req *notification
 		msgs = append(msgs, list[i].ToProto())
 	}
 	return &notification.GetMessagesResponse{
-		Code:         0,
-		Message:      "ok",
-		List:         msgs,
-		Total:        total,
-		UnreadCount:  unread,
+		Code:        0,
+		Message:     "ok",
+		List:        msgs,
+		Total:       total,
+		UnreadCount: unread,
 	}, nil
 }
 

@@ -20,8 +20,8 @@ var upgrader = websocket.Upgrader{
 
 // Handler WebSocket 处理器
 type Handler struct {
-	hub        *Hub
-	jwtSecret  string
+	hub       *Hub
+	jwtSecret string
 }
 
 // NewHandler 构造 WS handler
