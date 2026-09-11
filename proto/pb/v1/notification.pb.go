@@ -4,15 +4,14 @@
 // 	protoc        v6.33.4
 // source: notification.proto
 
-package pb
+package v1
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -798,7 +797,7 @@ const file_notification_proto_rawDesc = "" +
 	"\rCreateMessage\x12%.notification.v1.CreateMessageRequest\x1a&.notification.v1.CreateMessageResponse\"\x00\x12Z\n" +
 	"\vGetMessages\x12#.notification.v1.GetMessagesRequest\x1a$.notification.v1.GetMessagesResponse\"\x00\x12c\n" +
 	"\x0eGetUnreadCount\x12&.notification.v1.GetUnreadCountRequest\x1a'.notification.v1.GetUnreadCountResponse\"\x00\x12Q\n" +
-	"\bMarkRead\x12 .notification.v1.MarkReadRequest\x1a!.notification.v1.MarkReadResponse\"\x00B3Z1github.com/mysunshines/blog-notification/proto/pbb\x06proto3"
+	"\bMarkRead\x12 .notification.v1.MarkReadRequest\x1a!.notification.v1.MarkReadResponse\"\x00B6Z4github.com/mysunshines/blog-notification/proto/pb/v1b\x06proto3"
 
 var (
 	file_notification_proto_rawDescOnce sync.Once

@@ -15,8 +15,10 @@ SERVICE_NAME=$(SERVICE_SHORT_NAME)-service
 BINARY_NAME=$(SERVICE_NAME)
 SRC_DIR=cmd/server
 BIN_DIR=bin
-# 宿主机端口映射与 docker-compose.yml 保持一致（9105=gRPC，8085=WS/探活，9099=Metrics）
-PORTS=8085:8085 9105:9105 9099:9099
+# 宿主机端口映射与 docker-compose.yml 保持一致：
+#   8085 = HTTP（WebSocket /ws/notification + 探活）、9105 = gRPC。
+# Metrics 9096 不对外映射，由 Prometheus 在 shared-infra 网络内直接抓取。
+PORTS=8085:8085 9105:9105
 
 GIT_VERSION      := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 VERSION_LDFLAGS := -X main.Version=$(GIT_VERSION)
@@ -54,6 +56,15 @@ proto:
 	else \
 		echo "==> No proto directory"; \
 	fi
+
+# 生成对外 API 文档（来源：proto，网关按 /api/v1/<svc>/<snake_method> 反射代理）
+# 生成文件：服务根目录 api.md（含 url / method / headers / request / response / curl 示例）
+# Go 版生成器（Python 版 gen_api_doc.py 保留作为备选）
+API_GEN_DIR := $(dir $(lastword $(MAKEFILE_LIST)))/../infra/scripts/gen_api_doc
+API_GEN := $(API_GEN_DIR)/genapidoc
+api:
+	@cd "$(API_GEN_DIR)" && go build -o genapidoc .
+	@"$(API_GEN)" --proto $(PROTO_DIR)/$(SERVICE_SHORT_NAME).proto --out api.md
 
 # 代码检查
 lint:

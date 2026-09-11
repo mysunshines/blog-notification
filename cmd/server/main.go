@@ -15,7 +15,7 @@ import (
 	"github.com/mysunshines/blog-notification/internal/repository"
 	"github.com/mysunshines/blog-notification/internal/service"
 	"github.com/mysunshines/blog-notification/internal/ws"
-	notification "github.com/mysunshines/blog-notification/proto/pb"
+	notification "github.com/mysunshines/blog-notification/proto/pb/v1"
 
 	"github.com/mysunshines/gocommon/cache"
 	goconfig "github.com/mysunshines/gocommon/config"
@@ -44,6 +44,9 @@ var (
 	metricsCancel context.CancelFunc
 	hotCfg        *configcenter.ServiceConfig
 	deregister    func() error
+	// serviceName 当前服务名（取自配置 cfg.App.Name），供 main 顶层 defer 与 run 内共用，
+	// 避免硬编码 gocommon 的 constants.ServiceNameXxx。
+	serviceName string
 )
 
 type Server struct {
@@ -89,7 +92,7 @@ func NewServer(cfg *goconfig.Config, db *gorm.DB) *Server {
 
 	// 初始化熔断器
 	cb := gobreaker.NewCircuitBreaker(gobreaker.Settings{
-		Name:        constants.ServiceNameNotification,
+		Name:        serviceName,
 		MaxRequests: constants.DefaultCBMaxRequests,
 		Interval:    constants.DefaultCBInterval * time.Second,
 		Timeout:     constants.DefaultCBTimeout * time.Second,
@@ -243,11 +246,11 @@ func (s *Server) runGRPCServer() {
 		grpc.MaxConcurrentStreams(g.MaxConcurrentStreams),
 		// 拦截器链：Panic 恢复（最外层，含指标 panic_counter_total）→ 超时+熔断 → 鉴权 → 指标 → 日志
 		grpc.ChainUnaryInterceptor(
-			middleware.GRPCRecoveryInterceptor(constants.ServiceNameNotification),
-			middleware.GRPCTimeoutInterceptor(constants.ServiceNameNotification),
+			middleware.GRPCRecoveryInterceptor(serviceName),
+			middleware.GRPCTimeoutInterceptor(serviceName),
 			middleware.GRPCCircuitBreakerInterceptor(s.cb),
 			middleware.GRPCAuthInterceptor(),
-			middleware.GRPCMetricsInterceptor(constants.ServiceNameNotification),
+			middleware.GRPCMetricsInterceptor(serviceName),
 			middleware.GRPCLoggingInterceptor(),
 		),
 	}
@@ -315,7 +318,7 @@ func main() {
 		}
 		if runErr != nil {
 			// 用常量而非 goconfig.Get().App.Name：配置加载失败时 Get() 可能为 nil
-			log.Errorf("%s exited: %v", constants.ServiceNameNotification, runErr)
+			log.Errorf("%s exited: %v", serviceName, runErr)
 		}
 		releaseInfra()
 		if runErr != nil {
@@ -334,22 +337,23 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	serviceName = cfg.App.Name
 
 	// ② 初始化日志
-	log.Init(cfg.App.LogDir, cfg.App.LogLevel, constants.ServiceNameNotification)
+	log.Init(cfg.App.LogDir, cfg.App.LogLevel, serviceName)
 
 	// ②.1 启用 Loki 集中日志；未配置时降级为仅本地日志。
-	log.EnableLokiFromConfig(cfg.Loki, constants.ServiceNameNotification)
+	log.EnableLokiFromConfig(cfg.Loki, serviceName)
 	// ②.2 启用 OpenTelemetry 链路追踪；未配置时降级为不采集。
-	observability.InitAndRegister(constants.ServiceNameNotification, cfg.OTel)
+	observability.InitAndRegister(serviceName, cfg.OTel)
 
 	// ③ 初始化指标
-	metrics.Init(constants.ServiceNameNotification)
+	metrics.Init(serviceName)
 	// 周期性刷新运行时指标（内存/goroutine）并上报服务健康状态，消除 dashboard 长期 0 / No data。
 	metricsCtx, metricsCancelFn := context.WithCancel(context.Background())
 	metricsCancel = metricsCancelFn
 	metrics.StartRuntimeMetrics(metricsCtx, 15*time.Second)
-	metrics.StartHealthReporter(metricsCtx, constants.ServiceNameNotification, 10*time.Second, database.Ping, cache.Ping)
+	metrics.StartHealthReporter(metricsCtx, serviceName, 10*time.Second, database.Ping, cache.Ping)
 
 	// ④ 配置中心热更：从 Consul KV 拉取热更配置（限流阈值/日志级别/出站韧性等），
 	// 缺失时降级到 config_xxx.yaml 默认值（不致命）。Load 会回写 cfg.RateLimit，

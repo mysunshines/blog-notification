@@ -6,7 +6,7 @@ import (
 	"github.com/mysunshines/blog-notification/internal/model"
 	"github.com/mysunshines/blog-notification/internal/repository"
 	"github.com/mysunshines/blog-notification/internal/ws"
-	notification "github.com/mysunshines/blog-notification/proto/pb"
+	notification "github.com/mysunshines/blog-notification/proto/pb/v1"
 
 	"github.com/mysunshines/gocommon/middleware"
 	"go.uber.org/zap"

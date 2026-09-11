@@ -1,49 +1,49 @@
 # ============================================================
-# notification-service 配置（本地开发环境）
-# ============================================================
-# 说明：
-#   1. 环境切换：容器部署时由环境变量 APP_ENV 选择 config_<env>.yaml
-#      （如 APP_ENV=test → config_test.yaml），本文件为本地开发默认值。
-#   2. 端口约定（全仓库统一）：gRPC 用 91xx 段，HTTP 用 808x 段，
-#      Metrics 用 909x 段，避免与 MinIO 的 90xx 段冲突。
+# notification-service 配置（本地开发环境 / development）
+# ------------------------------------------------------------
+# 环境切换（优先级从高到低）：
+#   1. CONFIG_PATH 环境变量显式指定
+#   2. config/config_${APP_ENV}.yaml（APP_ENV=test|production）
+#   3. config/config.yaml（本文件，APP_ENV 未设置或为 development）
+#
+# 全仓库统一约定（详见 README「端口分配」与「配置规范」）：
+#   - 端口段：HTTP 808x / gRPC 91xx / Metrics 909x
+#   - 时间单位：所有 expire_time / *_sec / *_ttl 字段统一为「秒」
+#   - 段落顺序：app → grpc → http → database → redis → jwt → consul
+#              → metrics → rate_limit → server → loki → otel
 # ============================================================
 
 app:
   name: "notification-service"
   env: "development"
-  # 日志目录与级别：日志按天分文件写入 log_dir，级别以下不输出
   log_dir: "./logs"
   log_level: "info"
 
-# gRPC 服务：唯一业务入口（消息写入/列表/未读数/标记已读）。
-# 下游 article/comment 等服务经 consul resolver 按服务名发现本端口。
+# gRPC：唯一业务入口（消息写入 / 列表 / 未读数 / 标记已读）。
+# 下游 article / comment 等服务经 consul resolver 按服务名发现本端口。
 grpc:
   host: "0.0.0.0"
   port: 9105
 
-# HTTP 服务：仅承载 WebSocket（/ws/notification）与健康检查探针，
-# 业务 REST 不在此端口 —— 前端经 Nginx → Gateway(WS 反向代理) → 本端口建连。
-# 注意：WriteTimeout 会限制 WS 连接的总时长，gin/net/http 对升级后的
-# 连接不再按该超时掐断，故无需为 WS 单独调大（升级握手本身要求快）。
+# HTTP：仅承载 WebSocket（/ws/notification）与健康检查探针。
+# 业务 REST 不在此端口 —— 前端经 Nginx → Gateway（WS 反向代理）→ 本端口建连。
 http:
   host: "0.0.0.0"
   port: 8085
 
-# 数据库：站内消息独立库 notification_db（与业务库隔离），
-# 建表语句见 infra/scripts/init.sql（notifications 表）。
+# 数据库：站内消息独立库 notification_db（与业务库隔离）
 database:
   host: "localhost"
   port: 3306
   user: "root"
-  password: "password"
+  password: "root123"
   name: "notification_db"
-  max_open_conns: 100
-  max_idle_conns: 10
+  max_open_conns: 25
+  max_idle_conns: 5
   conn_max_lifetime: 3600
 
 # Redis：未读计数缓存（key 前缀 notification:unread:<user_id>，TTL 10 分钟）。
-# KeyPrefix 由代码强制覆写为 constants.RedisKeyPrefixNotification，
-# 此处无需（也不应）手工配置。
+# KeyPrefix 由代码强制覆写为 constants.RedisKeyPrefixNotification，此处无需配置。
 redis:
   host: "localhost"
   port: 6379
@@ -51,50 +51,55 @@ redis:
   db: 0
   pool_size: 100
 
-# JWT：必须与 user-service 签发密钥一致。
-# 用途有两处——gRPC 鉴权拦截器校验业务调用方身份；
-# WS 握手时校验 ?token= 查询参数中的 JWT 提取 user_id。
+# JWT：必须与 user-service 签发密钥一致（原为 168「秒」，导致 token 3 分钟即失效）。
 jwt:
   secret: "your-secret-key-change-in-production"
-  expire_time: 168 # 7 days in hours
+  expire_time: 604800  # 秒；7 天
 
-# Consul：注册本服务（gRPC + HTTP 两个端口都注册），
-# 供 Gateway 同步路由（/api/v1/notification/*）与 WS 反向代理寻址。
 consul:
   address: "localhost:8500"
-  check_interval: 10        # 健康检查间隔（秒）
-  deregister_critical: 30   # 连续不健康多久后自动摘除（秒）
+  check_interval: 10
+  deregister_critical: 30
 
-# Prometheus 指标暴露端口（独立于业务 HTTP 端口）
 metrics:
   enabled: true
   path: "/metrics"
-  port: 9099
+  port: 9096
 
-# 限流：本服务不做 HTTP 业务限流（REST 流量经网关，网关已限流），
-# gRPC 写入 QPS 主要来自内部服务，量级可控。
+# 入站限流：gRPC 写入 QPS 主要来自内部服务，量级可控，阈值放宽；
+# WS 长连接不受令牌桶约束（仅握手后不再经过业务限流）。
 rate_limit:
-  enabled: false
-  qps: 1000
-  burst: 2000
+  enabled: true
+  qps: 2000
+  burst: 4000
 
-# HTTP server 超时（秒）。WS 升级后的长连接不受这些超时约束
-# （由 ws 包内的 ping/pong 心跳管理，见 internal/ws/handler.go）。
+# 入站 server 调优（单位：秒）。
+# ★ 键名必须是嵌套结构 server.grpc.* / server.http.*（与 gocommon config.ServerConfig 对应）。
+#   历史上的扁平写法（grpc_timeout / http_read_timeout ...）不是合法字段，
+#   会被 yaml 静默忽略，等于整段配置未生效。
+# WS 升级后的长连接不受这些超时约束（由 ws 包内 ping/pong 心跳管理）。
 server:
-  grpc_timeout: 10
-  http_read_timeout: 15
-  http_write_timeout: 15
-  http_idle_timeout: 60
-  http_read_header_timeout: 10
-  http_default_timeout: 30
+  grpc:
+    default_timeout_sec: 10
+    max_connection_idle_sec: 60
+    max_connection_age_sec: 120
+    max_connection_age_grace_sec: 30
+    min_ping_interval_sec: 30
+    max_concurrent_streams: 100
+  http:
+    read_timeout_sec: 30
+    read_header_timeout_sec: 10
+    write_timeout_sec: 30
+    idle_timeout_sec: 120
+    default_timeout_sec: 30
 
-# 弹性配置（Consul 配置中心热更下发后覆盖本地默认）：
-# 熔断作用于本服务对外的 gRPC 一元调用（入口拦截器），
-# 超时按方法分级（GRPCMethodTimeout），此处为服务级兜底。
-resilience:
-  notification.v1.NotificationService:
-    timeout_sec: 3
-    circuit:
-      max_requests: 5     # 半开状态放行的探测请求数
-      interval_sec: 10    # 计数统计窗口
-      timeout_sec: 5      # 熔断持续时间，过后进入半开
+# 可观测性（Loki 集中日志 + OTel 链路追踪）：默认关闭，
+# `make observ-up` 拉起基础设施后置为 true 即可接入。
+loki:
+  enabled: false
+  url: "http://loki:3100/loki/api/v1/push"
+  tenant_id: ""
+
+otel:
+  enabled: false
+  endpoint: "otel-collector:4317"

@@ -1,23 +1,18 @@
 # ============================================================
-# notification-service 配置（Docker test 环境）
+# notification-service 配置（production 环境）
 # ------------------------------------------------------------
-# 由 docker-compose 注入 APP_ENV=test 时加载（CONFIG_PATH=config/config_test.yaml）。
-# 与本地 config.yaml 的差异：地址全部指向 docker 网络内的基础设施容器
-# （mysql / redis / consul 均为 shared-infra 网络中的 service 名）。
+# 与 test 的差异：日志级别 info、JWT 密钥走运维下发（不可用示例值）。
 # ============================================================
 
 app:
   name: "notification-service"
-  env: "test"
-  log_level: "debug"
+  env: "production"
+  log_level: "info"
 
-# gRPC 91xx 段（与其它服务统一：user 9101 / article 9102 / comment 9103 / notification 9105）
 grpc:
   host: "0.0.0.0"
   port: 9105
 
-# HTTP：承载 WS（/ws/notification）+ 探活，容器内 8085，
-# docker-compose 已映射宿主机 8085（Gateway 的 WS 反向代理目标）。
 http:
   host: "0.0.0.0"
   port: 8085
@@ -26,9 +21,9 @@ database:
   host: "mysql"
   port: 3306
   user: "root"
-  password: "root123"    # 与 docker-compose.infra.yml 中 MySQL 初始化口令一致
+  password: "root123"
   name: "notification_db"
-  max_open_conns: 25     # 容器部署收紧连接数（多副本共享 MySQL max_connections）
+  max_open_conns: 25
   max_idle_conns: 5
   conn_max_lifetime: 3600
 
@@ -39,9 +34,8 @@ redis:
   db: 0
   pool_size: 100
 
-# 与 user-service test 环境签发密钥一致（gateway 同）
 jwt:
-  secret: "test-secret-key-do-not-use-in-production"
+  secret: "production-secret-change-me"
   expire_time: 604800    # 秒；7 天
 
 consul:
@@ -59,7 +53,6 @@ rate_limit:
   qps: 2000
   burst: 4000
 
-# 键名必须为嵌套结构，扁平写法会被 yaml 静默忽略
 server:
   grpc:
     default_timeout_sec: 10

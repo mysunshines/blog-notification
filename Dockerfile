@@ -41,7 +41,7 @@ RUN adduser -D -g '' appuser
 USER appuser
 
 # 8085: HTTP(WebSocket+探活), 9105: gRPC 业务通信, 9099: Prometheus Metrics
-EXPOSE 8085 9105 9099
+EXPOSE 8085 9105 9096
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:8085/health || exit 1

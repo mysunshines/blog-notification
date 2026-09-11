@@ -251,7 +251,7 @@ article/comment 服务通过 `replace` 指令引用本模块的 proto：
 ```go
 // go.mod: replace github.com/mysunshines/blog-notification => ../notification-service
 
-import notification "github.com/mysunshines/blog-notification/proto/pb"
+import notification "github.com/mysunshines/blog-notification/proto/pb/v1"
 
 var resp notification.CreateMessageResponse
 err := grpcclient.SendRequest(ctx,

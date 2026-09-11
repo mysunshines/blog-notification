@@ -2,7 +2,7 @@ syntax = "proto3";
 
 package notification.v1;
 
-option go_package = "github.com/mysunshines/blog-notification/proto/pb";
+option go_package = "github.com/mysunshines/blog-notification/proto/pb/v1";
 
 
 // NotificationType 站内消息类型

@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	notification "github.com/mysunshines/blog-notification/proto/pb"
+	notification "github.com/mysunshines/blog-notification/proto/pb/v1"
 )
 
 // Notification 站内消息持久化模型
