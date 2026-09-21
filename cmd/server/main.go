@@ -15,6 +15,7 @@ import (
 	"github.com/mysunshines/blog-notification/internal/repository"
 	"github.com/mysunshines/blog-notification/internal/service"
 	"github.com/mysunshines/blog-notification/internal/ws"
+	svcconst "github.com/mysunshines/blog-notification/internal/constants"
 	notification "github.com/mysunshines/blog-notification/proto/pb/v1"
 
 	"github.com/mysunshines/gocommon/cache"
@@ -72,7 +73,7 @@ func initInfra(cfg *goconfig.Config) (*gorm.DB, error) {
 	db := database.GetDB()
 
 	cacheCfg := cfg.Redis
-	cacheCfg.KeyPrefix = constants.RedisKeyPrefixNotification
+	cacheCfg.KeyPrefix = svcconst.RedisKeyPrefixNotification
 	if err := cache.Init(&cacheCfg); err != nil {
 		return nil, fmt.Errorf("failed to init Redis: %v", err)
 	}

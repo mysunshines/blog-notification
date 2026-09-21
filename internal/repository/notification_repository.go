@@ -7,6 +7,7 @@ import (
 	"github.com/mysunshines/blog-notification/internal/model"
 	"github.com/mysunshines/gocommon/cache"
 	"github.com/mysunshines/gocommon/constants"
+	svcconst "github.com/mysunshines/blog-notification/internal/constants"
 
 	"gorm.io/gorm"
 )
@@ -23,7 +24,7 @@ func NewNotificationRepository(db *gorm.DB) *NotificationRepository {
 
 // unreadKey 未读计数缓存 key（按 userID 维度）
 func unreadKey(userID uint64) string {
-	return fmt.Sprintf("%snotification:unread:%d", constants.RedisKeyPrefixNotification, userID)
+	return fmt.Sprintf("%snotification:unread:%d", svcconst.RedisKeyPrefixNotification, userID)
 }
 
 // Create 写入一条消息，并递增接收者未读计数。
