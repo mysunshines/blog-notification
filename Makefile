@@ -16,9 +16,9 @@ BINARY_NAME=$(SERVICE_NAME)
 SRC_DIR=cmd/server
 BIN_DIR=bin
 # 宿主机端口映射与 docker-compose.yml 保持一致：
-#   8085 = HTTP（WebSocket /ws/notification + 探活）、9105 = gRPC。
+#   8085 = HTTP（WebSocket /ws/notification + 探活）、9104 = gRPC。
 # Metrics 9096 不对外映射，由 Prometheus 在 shared-infra 网络内直接抓取。
-PORTS=8085:8085 9105:9105
+PORTS=8085:8085 9104:9104
 
 GIT_VERSION      := $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 VERSION_LDFLAGS := -X main.Version=$(GIT_VERSION)

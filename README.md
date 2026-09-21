@@ -8,7 +8,7 @@
 
 | 端口 | 用途 |
 |------|------|
-| 9105 | gRPC（业务入口：CreateMessage / GetMessages / GetUnreadCount / MarkRead） |
+| 9104 | gRPC（业务入口：CreateMessage / GetMessages / GetUnreadCount / MarkRead） |
 | 8085 | HTTP（WebSocket `/ws/notification` + 探活 `/health` `/ready` `/version`） |
 | 9099 | Prometheus Metrics |
 
@@ -226,7 +226,7 @@ notification-service:
   build: ./notification-service
   ports:
     - "8085:8085"   # WS + 探活（Gateway wsproxy 的代理目标）
-    - "9105:9105"   # gRPC
+    - "9104:9104"   # gRPC
 ```
 
 前置条件：

@@ -23,7 +23,7 @@ app:
 # 下游 article / comment 等服务经 consul resolver 按服务名发现本端口。
 grpc:
   host: "0.0.0.0"
-  port: 9105
+  port: 9104
 
 # HTTP：仅承载 WebSocket（/ws/notification）与健康检查探针。
 # 业务 REST 不在此端口 —— 前端经 Nginx → Gateway（WS 反向代理）→ 本端口建连。

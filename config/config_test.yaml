@@ -11,10 +11,10 @@ app:
   env: "test"
   log_level: "debug"
 
-# gRPC 91xx 段（与其它服务统一：user 9101 / article 9102 / comment 9103 / notification 9105）
+# gRPC 91xx 段（与其它服务统一：user 9101 / article 9102 / comment 9103 / notification 9104）
 grpc:
   host: "0.0.0.0"
-  port: 9105
+  port: 9104
 
 # HTTP：承载 WS（/ws/notification）+ 探活，容器内 8085，
 # docker-compose 已映射宿主机 8085（Gateway 的 WS 反向代理目标）。
