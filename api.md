@@ -2,8 +2,8 @@
 
 > 自动生成自 `notification.proto`（模式：proto）。
 > 网关按 `/api/v1/notification/<snake_method>` 反射代理到 gRPC 方法 `notification.v1.NotificationService/<Method>`。
-> 生成时间：2026-09-11 21:16:05
-> Base URL（网关入口）：http://localhost:8080
+> 生成时间：2026-09-21 19:37:19
+> Base URL（网关入口）：http://localhost:8081
 
 ## 接口列表
 
@@ -16,7 +16,7 @@
 
 ## CreateMessage
 
-- **URL**: `http://localhost:8080/api/v1/notification/create_message`
+- **URL**: `http://localhost:8081/api/v1/notification/create_message`
 - **Method**: `POST`
 - **鉴权**: 公开（无需鉴权）
 
@@ -57,14 +57,14 @@ Content-Type: application/json
 
 ### curl 示例
 ```bash
-curl -X POST 'http://localhost:8080/api/v1/notification/create_message' \
+curl -X POST 'http://localhost:8081/api/v1/notification/create_message' \
   -H 'Content-Type: application/json' \
   -d '{"user_id": 0, "type": {}, "title": "", "content": "", "link": "", "actor_id": 0, "actor_name": ""}'
 ```
 
 ## GetMessages
 
-- **URL**: `http://localhost:8080/api/v1/notification/get_messages?user_id=0&type=ARTICLE_APPROVED&page=0&page_size=0&only_unread=false`
+- **URL**: `http://localhost:8081/api/v1/notification/get_messages?user_id=0&type=ARTICLE_APPROVED&page=0&page_size=0&only_unread=false`
 - **Method**: `GET`
 - **鉴权**: 公开（无需鉴权）
 
@@ -105,12 +105,12 @@ user_id=0&type=ARTICLE_APPROVED&page=0&page_size=0&only_unread=false
 
 ### curl 示例
 ```bash
-curl -X GET 'http://localhost:8080/api/v1/notification/get_messages?user_id=0&type=ARTICLE_APPROVED&page=0&page_size=0&only_unread=false'
+curl -X GET 'http://localhost:8081/api/v1/notification/get_messages?user_id=0&type=ARTICLE_APPROVED&page=0&page_size=0&only_unread=false'
 ```
 
 ## GetUnreadCount
 
-- **URL**: `http://localhost:8080/api/v1/notification/get_unread_count?user_id=0`
+- **URL**: `http://localhost:8081/api/v1/notification/get_unread_count?user_id=0`
 - **Method**: `GET`
 - **鉴权**: 公开（无需鉴权）
 
@@ -145,12 +145,12 @@ user_id=0
 
 ### curl 示例
 ```bash
-curl -X GET 'http://localhost:8080/api/v1/notification/get_unread_count?user_id=0'
+curl -X GET 'http://localhost:8081/api/v1/notification/get_unread_count?user_id=0'
 ```
 
 ## MarkRead
 
-- **URL**: `http://localhost:8080/api/v1/notification/mark_read`
+- **URL**: `http://localhost:8081/api/v1/notification/mark_read`
 - **Method**: `POST`
 - **鉴权**: 公开（无需鉴权）
 
@@ -187,7 +187,7 @@ Content-Type: application/json
 
 ### curl 示例
 ```bash
-curl -X POST 'http://localhost:8080/api/v1/notification/mark_read' \
+curl -X POST 'http://localhost:8081/api/v1/notification/mark_read' \
   -H 'Content-Type: application/json' \
   -d '{"user_id": 0, "message_id": 0, "mark_all": false}'
 ```
